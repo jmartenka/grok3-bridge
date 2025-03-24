@@ -85,7 +85,7 @@ This will check if everything's working by:
 
 ## Using Your New "API"
 
-Now you can use any OpenAI client by pointing it to `http://localhost:5000`:
+Now you can use any OpenAI client by pointing it to `http://localhost:5001`:
 
 ### Python Example (OpenAI Client)
 
@@ -93,7 +93,7 @@ Now you can use any OpenAI client by pointing it to `http://localhost:5000`:
 import openai
 
 client = openai.OpenAI(
-    base_url="http://localhost:5000/v1",
+    base_url="http://localhost:5001/v1",
     api_key="totally-fake-key-but-we-need-something-here"  # API key is ignored
 )
 
@@ -128,7 +128,7 @@ for chunk in stream:
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  baseURL: 'http://localhost:5000/v1',
+  baseURL: 'http://localhost:5001/v1',
   apiKey: 'this-could-literally-be-anything-just-like-how-a-viola-burns-longer-than-a-violin'
 });
 
