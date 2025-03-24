@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Grok3 Bridge Connection</title>
+    <script src="socket.io.min.js"></script>
+    <script>
+        // Debug mode
+        const debugMode = true;
+        
+        // Debug function
+        function debug(type, message, data = null) {
+            if (!debugMode) return;
+            
+            const styles = {
+                info: 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;',
+                success: 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;',
+                error: 'background: #F44336; color: white; padding: 2px 5px; border-radius: 3px;',
+                warning: 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;',
+                request: 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;',
+                response: 'background: #009688; color: white; padding: 2px 5px; border-radius: 3px;'
+            };
+            
+            const style = styles[type] || styles.info;
+            
+            if (data) {
+                console.groupCollapsed(`%c GROK3-BRIDGE WAR ${type.toUpperCase()} `, style, message);
+                console.log(data);
+                console.groupEnd();
+            } else {
+                console.log(`%c GROK3-BRIDGE WAR ${type.toUpperCase()} `, style, message);
+            }
+            
+            // Also send to parent
+            try {
+                window.parent.postMessage({
+                    type: 'debug',
+                    level: type,
+                    message: message,
+                    data: data
+                }, '*');
+            } catch (e) {
+                console.error('Failed to send debug info to parent:', e);
+            }
+        }
+
+        // Socket connection from extension origin to bypass CORS
+        const socket = io('http://localhost:5000', {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 10
+        });
+
+        // Socket event handlers
+        socket.on('connect', function() {
+            debug('success', 'Connected to server via web_accessible_resources');
+            window.parent.postMessage({type: 'connected'}, '*');
+        });
+
+        socket.on('connect_error', function(error) {
+            debug('error', 'Connection error:', error);
+            window.parent.postMessage({type: 'error', data: error.toString()}, '*');
+        });
+
+        socket.on('request', function(request) {
+            debug('request', 'Received request from server', request);
+            window.parent.postMessage({type: 'request', data: request}, '*');
+        });
+
+        // Handle messages from background script
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'sendResponse') {
+                debug('response', 'Sending response to server', {
+                    responseLength: event.data.data.length,
+                    preview: event.data.data.substring(0, 100) + (event.data.data.length > 100 ? '...' : '')
+                });
+                socket.emit('response', event.data.data);
+            }
+        });
+        
+        // Log initialization
+        debug('info', 'Web accessible resource initialized', {
+            url: window.location.href,
+            timestamp: new Date().toISOString()
+        });
+    </script>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Grok3 Bridge Connection Handler</h2>
+        <p>This page handles Socket.IO connections from the extension's origin.</p>
+        <p>Status: <span id="status">Connecting...</span></p>
+        <div id="debug-panel" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5;">
+            <h3>Debug Information</h3>
+            <p>Connection Mode: <strong>Web Accessible Resource</strong></p>
+            <p>Last Event: <span id="last-event">None</span></p>
+            <p>Total Requests: <span id="request-count">0</span></p>
+            <p>Total Responses: <span id="response-count">0</span></p>
+            <button id="clear-logs" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Clear Console Logs</button>
+        </div>
+    </div>
+    <script>
+        // Stats tracking
+        let requestCount = 0;
+        let responseCount = 0;
+        
+        // Update status
+        socket.on('connect', function() {
+            document.getElementById('status').textContent = 'Connected';
+            document.getElementById('status').style.color = 'green';
+            document.getElementById('last-event').textContent = 'Connected';
+        });
+        
+        socket.on('disconnect', function() {
+            document.getElementById('status').textContent = 'Disconnected';
+            document.getElementById('status').style.color = 'red';
+            document.getElementById('last-event').textContent = 'Disconnected';
+        });
+        
+        socket.on('connect_error', function() {
+            document.getElementById('status').textContent = 'Connection Error';
+            document.getElementById('status').style.color = 'red';
+            document.getElementById('last-event').textContent = 'Connection Error';
+        });
+        
+        socket.on('request', function() {
+            requestCount++;
+            document.getElementById('request-count').textContent = requestCount;
+            document.getElementById('last-event').textContent = 'Received Request';
+        });
+        
+        // Track response
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'sendResponse') {
+                responseCount++;
+                document.getElementById('response-count').textContent = responseCount;
+                document.getElementById('last-event').textContent = 'Sent Response';
+            }
+        });
+        
+        // Clear console logs
+        document.getElementById('clear-logs').addEventListener('click', function() {
+            console.clear();
+            debug('info', 'Console logs cleared');
+        });
+    </script>
+</body>
+</html> 

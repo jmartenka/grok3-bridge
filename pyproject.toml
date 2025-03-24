@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "grok3-bridge"
+version = "0.1.0"
+description = "Bridge between Grok AI and OpenAI API format, because i was tired waiting for API access"
+authors = ["kmartenka"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+flask = "^2.0.1"
+flask-socketio = "^5.1.1"
+flask-cors = "^3.0.10"
+python-socketio = "^5.3.0"
+python-engineio = "^4.2.1"
+requests = "^2.26.0"
+setuptools = "^69.0.0"  # Provides distutils functionality
+sseclient-py = "^1.7.2"  # For streaming API testing
+colorama = "^0.4.6"     # For colored terminal output
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
